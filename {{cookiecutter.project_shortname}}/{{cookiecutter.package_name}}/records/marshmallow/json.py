@@ -3,23 +3,15 @@
 
 from invenio_jsonschemas import current_jsonschemas
 from invenio_records_rest.schemas import Nested, StrictKeysMixin
-from invenio_records_rest.schemas.fields import DateString, GenFunction, \
-    PersistentIdentifier, SanitizedUnicode
-from marshmallow import fields, missing, validate
+from invenio_records_rest.schemas.fields import (
+    DateString,
+    GenFunction,
+    PersistentIdentifier,
+    SanitizedUnicode,
+)
+from marshmallow import fields, validate
 
 from {{ cookiecutter.package_name }}.records.api import Record
-
-
-def bucket_from_context(_, context):
-    """Get the record's bucket from context."""
-    record = (context or {}).get('record', {})
-    return record.get('_bucket', missing)
-
-
-def files_from_context(_, context):
-    """Get the record's files from context."""
-    record = (context or {}).get('record', {})
-    return record.get('_files', missing)
 
 
 def schema_from_context(_, context):
@@ -72,5 +64,3 @@ class RecordSchemaV1(StrictKeysMixin):
     updated = fields.Str(dump_only=True)
     links = fields.Dict(dump_only=True)
     id = PersistentIdentifier()
-    files = GenFunction(
-        serialize=files_from_context, deserialize=files_from_context)

@@ -1,11 +1,44 @@
 {% include 'misc/header.rst' %}
-Installation
+Requirements
 ============
 
-First you need to install
-`pipenv <https://docs.pipenv.org/install/#installing-pipenv>`_, it will handle
-the virtual environment creation for the project in order to sandbox our Python
+We strongly recommend the use of nvm (Node Version Manager).
+
+First install these tools on your operating system:
+
+* `poetry <https://python-poetry.org/>`_
+* npm
+* node
+* docker and docker-compose
+
+Working version
+
+.. table::
+
+    +--------+---------+
+    |  Tools | Version |
+    +========+=========+
+    | poetry |  1.7.0  |
+    +--------+---------+
+    |  node  | 14.21.3 |
+    +--------+---------+
+    |   npm  | 6.14.18 |
+    +--------+---------+
+
+The virtual environment creation for the project in order to sandbox our Python
 environment, as well as manage the dependency installation, among other things.
+
+How to update Node version with nvm
+
+.. code-block:: console
+
+    # First check you node version
+    node --version # here, 10.16.3
+    nvm install 14.21.3
+    nvm use 14.21.3
+
+Installation
+============
 
 Start all dependent services using docker-compose (this will start {{cookiecutter.database[:-3].title() + cookiecutter.database[-3:].upper()}},
 Elasticsearch {{cookiecutter.elasticsearch}}, RabbitMQ and Redis):
@@ -36,13 +69,13 @@ build all static assets):
 
 .. code-block:: console
 
-    $ ./scripts/bootstrap
+    $ poetry run ./scripts/bootstrap
 
 Next, create database tables, search indexes and message queues:
 
 .. code-block:: console
 
-    $ ./scripts/setup
+    $ poetry run ./scripts/setup
 
 Running
 -------
@@ -50,13 +83,15 @@ Start the webserver and the celery worker:
 
 .. code-block:: console
 
-    $ ./scripts/server
+    $ poetry run ./scripts/server
+
+At this time you can visit "https://127.0.0.1:5000"
 
 Start a Python shell:
 
 .. code-block:: console
 
-    $ ./scripts/console
+    $ poetry run ./scripts/console
 
 Upgrading
 ---------
@@ -64,7 +99,7 @@ In order to upgrade an existing instance simply run:
 
 .. code-block:: console
 
-    $ ./scripts/update
+    $ poetry run ./scripts/update
 
 Testing
 -------
@@ -72,7 +107,7 @@ Run the test suite via the provided script:
 
 .. code-block:: console
 
-    $ ./run-tests.sh
+    $ poetry run ./run-tests.sh
 
 By default, end-to-end tests are skipped. You can include the E2E tests like
 this:
@@ -90,7 +125,7 @@ You can build the documentation with:
 
 .. code-block:: console
 
-    $ pipenv run build_sphinx
+    $ poetry run build_sphinx
 
 Production environment
 ----------------------

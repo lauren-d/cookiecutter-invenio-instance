@@ -1,17 +1,57 @@
 #!/usr/bin/env bash
-{% include 'misc/header.py' %}
+# -*- coding: utf-8 -*-
+#
+# Copyright (C) 2024 CERN.
+#
+# inv-test is free software; you can redistribute it and/or modify it under
+# the terms of the MIT License; see LICENSE file for more details.
+
 set -e
 
-script_path=$(dirname "$0")
+SCRIPT_DIR="$( cd "$( dirname "$0" )" && pwd )"
+PROGRAM=`basename $0`
 
-export FLASK_ENV=development
+source "${SCRIPT_DIR}/includes/message.sh"
+
+# Displays program name
+msg "PROGRAM: ${PROGRAM}"
+
+# poetry is a mandatory condition to launch this program!
+if [[ -z "${VIRTUAL_ENV}" ]]; then
+  error_msg+exit "Error - Launch this script via poetry command:\n\tpoetry run ${PROGRAM}"
+fi
+
+if [[ -z "${FLASK_DEBUG}" ]]; then
+  export FLASK_DEBUG=True
+fi
+if [[ -z "${FLASK_ENV}" ]]; then
+  export FLASK_ENV="development"
+fi
+
+CELERY_LOG_LEVEL="INFO"
+worker=true
+while test $# -gt 0
+do
+  case "$1" in
+    -l|--loglevel)
+      CELERY_LOG_LEVEL=$2
+      shift ;;
+    -n|--no-worker)
+      worker=false ;;
+    (--) shift; break;;
+    (*) break;;
+  esac
+  shift
+done
 
 # Start Worker and Server
-pipenv run celery -A invenio_app.celery worker -l INFO & pid_celery=$!
+if $worker; then
+  celery -A invenio_app.celery worker -l ${CELERY_LOG_LEVEL} --beat & pid_celery=$!
+fi
 
-pipenv run invenio run \
-       --cert "$script_path"/../docker/nginx/test.crt \
-       --key "$script_path"/../docker/nginx/test.key & pid_server=$!
+invenio run \
+       --cert "$SCRIPT_DIR"/../docker/nginx/test.crt \
+       --key "$SCRIPT_DIR"/../docker/nginx/test.key & pid_server=$!
 
 trap 'kill $pid_celery $pid_server &>/dev/null' EXIT
 

@@ -1,26 +1,53 @@
 #!/usr/bin/env bash
-{% include 'misc/header.py' %}
+# -*- coding: utf-8 -*-
+#
+# Copyright (C) 2024 CERN.
+#
+# inv-test is free software; you can redistribute it and/or modify it under
+# the terms of the MIT License; see LICENSE file for more details.
+
 set -e
 
-{% raw %}
-script_path=$(dirname "$0")
-pipfile_lock_path="$script_path/../Pipfile.lock"
+SCRIPT_DIR="$( cd "$( dirname "$0" )" && pwd )"
+PROGRAM=`basename $0`
 
-if [ ! -f $pipfile_lock_path ]; then
-    echo "'Pipfile.lock' not found. Generating via 'pipenv lock --dev'..."
-    pipenv lock --dev
+source "${SCRIPT_DIR}/includes/message.sh"
+
+# Displays program name
+msg "PROGRAM: ${PROGRAM}"
+
+cmd="poetry install"
+
+# Poetry is a mandatory condition to launch this program!
+if [[ -z "${VIRTUAL_ENV}" ]]; then
+  error_msg+exit "Error - Launch this script via poetry command:\n\tpoetry run ${PROGRAM}"
 fi
 
-# Installs all packages specified in Pipfile.lock
-pipenv sync --dev
+# create virtualenv and upgrade pip
+info_msg "Upgrade pip"
+poetry run pip install --upgrade pip
 
-# Install application code and entrypoints from 'setup.py'
-pipenv run pip install -e $script_path/..
+# BOOTSTRAP START
+# install the application and all the dependencies
+info_msg "Install with command: ${cmd}"
+${cmd}
 
-# Ensure assets are symlinked by default
-export FLASK_ENV=development
+# collect static files and compile html/css assets
+# ------------------------------------------------
+# install the npm dependencies
+info_msg "Search static folder location"
+static_folder=$(poetry run invenio shell --no-term-title -c "print('static_folder:%s' % app.static_folder)"|grep static_folder| cut -d: -f2-)
 
-# Build assets
-pipenv run invenio collect -v
-pipenv run invenio webpack clean buildall
-{% endraw %}
+# build the web assets
+info_msg "Build web assets: collect"
+invenio collect --verbose
+
+info_msg "Build web assets: using webpack"
+invenio webpack buildall
+
+# info_msg "Compile translations"
+# pybabel compile -d {{ cookiecutter.package_name }}/translations
+
+success_msg "${PROGRAM} finished!"
+exit 0
+

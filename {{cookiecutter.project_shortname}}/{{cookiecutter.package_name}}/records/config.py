@@ -3,7 +3,7 @@
 
 from invenio_indexer.api import RecordIndexer
 from invenio_records_rest.facets import terms_filter
-from invenio_records_rest.utils import allow_all, check_elasticsearch
+from invenio_records_rest.utils import allow_all, check_search
 from invenio_search import RecordsSearch
 
 from {{ cookiecutter.package_name }}.records.api import Record
@@ -23,7 +23,6 @@ RECORDS_REST_ENDPOINTS = {
         search_class=RecordsSearch,
         indexer_class=RecordIndexer,
         search_index='records',
-        search_type=None,
         record_serializers={
             'application/json': ('{{ cookiecutter.package_name }}.records.serializers'
                                  ':json_v1_response'),
@@ -44,12 +43,12 @@ RECORDS_REST_ENDPOINTS = {
         max_result_window=10000,
         error_handlers=dict(),
         create_permission_factory_imp=allow_all,
-        read_permission_factory_imp=check_elasticsearch,
+        read_permission_factory_imp=check_search,
         update_permission_factory_imp=allow_all,
         delete_permission_factory_imp=allow_all,
         list_permission_factory_imp=allow_all,
-        links_factory_imp='invenio_records_files.'
-                          'links:default_record_files_links_factory',
+        links_factory_imp='invenio_records_rest.'
+                          'links:default_links_factory',
     ),
 }
 """REST API for {{cookiecutter.project_shortname}}."""
@@ -59,20 +58,8 @@ RECORDS_UI_ENDPOINTS = dict(
         pid_type='recid',
         route='/records/<pid_value>',
         template='records/record.html',
-        record_class='invenio_records_files.api:Record',
-    ),
-    recid_previewer=dict(
-        pid_type='recid',
-        route='/records/<pid_value>/preview/<path:filename>',
-        view_imp='invenio_previewer.views.preview',
-        record_class='invenio_records_files.api:Record',
-    ),
-    recid_files=dict(
-        pid_type='recid',
-        route='/records/<pid_value>/files/<path:filename>',
-        view_imp='invenio_records_files.utils.file_download_ui',
-        record_class='invenio_records_files.api:Record',
-    ),
+        record_class='invenio_records.api:Record',
+    )
 )
 """Records UI for {{cookiecutter.project_shortname}}."""
 
@@ -125,14 +112,3 @@ RECORDS_REST_DEFAULT_SORT = dict(
     )
 )
 """Set default sorting options."""
-
-RECORDS_FILES_REST_ENDPOINTS = {
-    'RECORDS_REST_ENDPOINTS': {
-        'recid': '/files'
-    },
-}
-"""Records files integration."""
-
-FILES_REST_PERMISSION_FACTORY = \
-    '{{ cookiecutter.package_name }}.records.permissions:files_permission_factory'
-"""Files-REST permissions factory."""

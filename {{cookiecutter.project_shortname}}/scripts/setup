@@ -1,16 +1,42 @@
 #!/usr/bin/env bash
-{% include 'misc/header.py' %}
+# -*- coding: utf-8 -*-
+#
+# Copyright (C) 2024 CERN.
+#
+# inv-test is free software; you can redistribute it and/or modify it under
+# the terms of the MIT License; see LICENSE file for more details.
+
 set -e
 
+SCRIPT_DIR="$( cd "$( dirname "$0" )" && pwd )"
+PROGRAM=`basename $0`
+
+source "${SCRIPT_DIR}/includes/message.sh"
+
+# Displays program name
+msg "PROGRAM: ${PROGRAM}"
+
+# poetry is a mandatory condition to launch this program!
+if [[ -z "${VIRTUAL_ENV}" ]]; then
+  error_msg+exit "Error - Launch this script via poetry command:\n\tpoetry run ${PROGRAM}"
+fi
+
 # Clean redis
-pipenv run invenio shell --no-term-title -c "import redis; redis.StrictRedis.from_url(app.config['CACHE_REDIS_URL']).flushall(); print('Cache cleared')"
-pipenv run invenio db destroy --yes-i-know
-pipenv run invenio db init create
-pipenv run invenio index destroy --force --yes-i-know
-pipenv run invenio index init --force
-pipenv run invenio index queue init purge
-pipenv run invenio files location --default 'default-location'  $(pipenv run invenio shell --no-term-title -c "print(app.instance_path)")'/data'
+invenio shell --no-term-title -c "import redis; redis.StrictRedis.from_url(app.config['CACHE_REDIS_URL']).flushall(); print('Cache cleared')"
+invenio db destroy --yes-i-know
+invenio db init create
+invenio index destroy --force --yes-i-know
+invenio index init --force
+invenio index queue init purge
 
 # Create admin role to restrict access
-pipenv run invenio roles create admin
-pipenv run invenio access allow superuser-access role admin
+invenio roles create -d 'Admins Group' admin
+
+# grant accesses to action roles
+invenio access allow superuser-access role admin
+
+# Create admin user
+invenio users create admin@uclouvain.be --password administrator --active --confirm
+
+# grant roles to users
+invenio access allow admin-access user admin@uclouvain.be
